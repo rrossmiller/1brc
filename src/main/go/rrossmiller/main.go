@@ -23,7 +23,7 @@ func main() {
 	}
 	scanner := bufio.NewScanner(f)
 
-	stations := []Station{}
+	stations := map[string]Station{}
 
 	for scanner.Scan() {
 		l := scanner.Text()
@@ -33,11 +33,11 @@ func main() {
 			panic(err)
 		}
 		station := Station{name: spl[0], temp: float32(v)}
-		stations = append(stations, station)
+		stations[spl[0]] = station
 	}
 
 	elapsed := time.Since(start)
 	fmt.Println(len(stations))
-	fmt.Println(stations[0])
+	fmt.Println(stations["Tokyo"])
 	fmt.Println(elapsed)
 }

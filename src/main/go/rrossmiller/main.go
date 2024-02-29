@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,10 +10,6 @@ import (
 	"time"
 )
 
-/*
-name=min/mean/max
-{Abha=-23.0/18.0/59.2
-*/
 func main() {
 	pth := os.Args[1]
 	start := time.Now()
@@ -32,12 +29,37 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		station := Station{name: spl[0], temp: float32(v)}
-		stations[spl[0]] = station
+
+		temp := float32(v)
+
+		if s, has := stations[spl[0]]; has {
+			s.count++
+			s.sum += temp
+			if s.Min > temp {
+				s.Min = temp
+			} else if s.Max < temp {
+				s.Max = temp
+			}
+			stations[s.Name] = s
+		} else {
+			stations[spl[0]] = Station{Name: spl[0], sum: temp, Min: temp, Max: temp, count: 1}
+		}
 	}
 
+	for k, v := range stations {
+		v.Mean = v.sum / v.count
+		stations[k] = v
+
+	}
+	//results
 	elapsed := time.Since(start)
 	fmt.Println(len(stations))
-	fmt.Println(stations["Tokyo"])
+	n := "Stillwater"
+	fmt.Println(stations[n])
 	fmt.Println(elapsed)
+	j, err := json.MarshalIndent(stations, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	os.WriteFile("res.json", j, 0644)
 }

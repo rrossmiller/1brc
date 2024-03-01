@@ -12,5 +12,5 @@ type Station struct {
 }
 
 func (s Station) String() string {
-	return fmt.Sprintf("%s: %v | %v| %v", s.Name, s.Min, s.Mean, s.Max)
+	return fmt.Sprintf("%s: %v | %v | %v", s.Name, s.Min, s.Mean, s.Max)
 }

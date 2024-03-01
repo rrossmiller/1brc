@@ -12,7 +12,40 @@ import (
 
 func main() {
 	pth := os.Args[1]
-	start := time.Now()
+	n, err := strconv.ParseInt(os.Args[2], 10, 8)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Running %s %d times\n", pth, n)
+
+	times := []time.Duration{}
+	for i := range n {
+		start := time.Now()
+		run(pth)
+		elapsed := time.Since(start)
+		times = append(times, elapsed)
+		fmt.Println(i)
+	}
+	t := meanTime(times)
+	fmt.Println("avg", t)
+
+	//results
+	stations := run(pth)
+	keys := make([]string, 0, len(stations))
+	for k := range stations {
+		keys = append(keys, k)
+	}
+
+	city := keys[0]
+	fmt.Println(stations[city])
+	j, err := json.MarshalIndent(stations, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	os.WriteFile("res.json", j, 0644)
+}
+
+func run(pth string) map[string]Station {
 	f, err := os.Open(pth)
 	defer f.Close()
 	if err != nil {
@@ -22,6 +55,11 @@ func main() {
 
 	stations := map[string]Station{}
 
+	// separate
+	//     scanner goroutine
+	//     line handler goroutine
+	// scanner sends lines to chan
+	// handler reads from the chan and updates the map
 	for scanner.Scan() {
 		l := scanner.Text()
 		spl := strings.Split(l, ";")
@@ -51,15 +89,6 @@ func main() {
 		stations[k] = v
 
 	}
-	//results
-	elapsed := time.Since(start)
-	fmt.Println(len(stations))
-	n := "Stillwater"
-	fmt.Println(stations[n])
-	fmt.Println(elapsed)
-	j, err := json.MarshalIndent(stations, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	os.WriteFile("res.json", j, 0644)
+
+	return stations
 }

@@ -1,36 +1,58 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime/pprof"
 	"strconv"
-	"strings"
 	"time"
 )
 
 func main() {
+	// set the function to test
+	f := run1
+
+	// get the path to the file
 	pth := os.Args[1]
+	// get the number of times to run
 	n, err := strconv.ParseInt(os.Args[2], 10, 8)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("Running %s %d times\n", pth, n)
 
-	times := []time.Duration{}
-	for i := range n {
-		start := time.Now()
-		run(pth)
-		elapsed := time.Since(start)
-		times = append(times, elapsed)
-		fmt.Println(i)
+	if len(os.Args) > 3 {
+		fmt.Println("profiling")
+		f, err := os.Create("cpu_profile.prof")
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		if err := pprof.StartCPUProfile(f); err != nil {
+			panic(err)
+		}
+		defer pprof.StopCPUProfile()
 	}
-	t := meanTime(times)
-	fmt.Println("avg", t)
+
+	// run n times and store the run times
+	if n > 1 {
+		times := []time.Duration{}
+		for i := range n {
+			start := time.Now()
+			f(pth)
+			elapsed := time.Since(start)
+			times = append(times, elapsed)
+			fmt.Printf("%d, ", i+1)
+		}
+		fmt.Println()
+		t := meanTime(times) // mean run time
+		fmt.Println("avg", t)
+	}
 
 	//results
-	stations := run(pth)
+	stations := f(pth) // run one more time to see results
 	keys := make([]string, 0, len(stations))
 	for k := range stations {
 		keys = append(keys, k)
@@ -43,52 +65,4 @@ func main() {
 		panic(err)
 	}
 	os.WriteFile("res.json", j, 0644)
-}
-
-func run(pth string) map[string]Station {
-	f, err := os.Open(pth)
-	defer f.Close()
-	if err != nil {
-		panic(err)
-	}
-	scanner := bufio.NewScanner(f)
-
-	stations := map[string]Station{}
-
-	// separate
-	//     scanner goroutine
-	//     line handler goroutine
-	// scanner sends lines to chan
-	// handler reads from the chan and updates the map
-	for scanner.Scan() {
-		l := scanner.Text()
-		spl := strings.Split(l, ";")
-		v, err := strconv.ParseFloat(spl[1], 32)
-		if err != nil {
-			panic(err)
-		}
-
-		temp := float32(v)
-
-		if s, has := stations[spl[0]]; has {
-			s.count++
-			s.sum += temp
-			if s.Min > temp {
-				s.Min = temp
-			} else if s.Max < temp {
-				s.Max = temp
-			}
-			stations[s.Name] = s
-		} else {
-			stations[spl[0]] = Station{Name: spl[0], sum: temp, Min: temp, Max: temp, count: 1}
-		}
-	}
-
-	for k, v := range stations {
-		v.Mean = v.sum / v.count
-		stations[k] = v
-
-	}
-
-	return stations
 }

@@ -18,3 +18,7 @@ func meanTime(times []time.Duration) time.Duration {
 	}
 	return dur
 }
+
+func output(){
+
+}

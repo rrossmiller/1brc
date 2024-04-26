@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"os"
-	"strconv"
 )
 
 // separate
@@ -28,14 +27,8 @@ func run(pth string) map[string]Station {
 
 	for scanner.Scan() {
 		l := scanner.Bytes()
-		spl := bytes.Split(l, semi)
-		v, err := strconv.ParseFloat(string(spl[1]), 32)
-
-		if err != nil {
-			panic(err)
-		}
-
-		temp := float32(v)
+		spl := bytes.Split(l, semi) // split the line by a semicolon
+		temp := ParseFloat(spl[1])
 
 		k := string(spl[0])
 		if s, has := stations[k]; has {
@@ -53,7 +46,10 @@ func run(pth string) map[string]Station {
 	}
 
 	for k, v := range stations {
-		v.Mean = v.sum / v.count
+		mean := v.sum / float64(v.count)
+		// mean = math.Round(math.Float64frombits(math.Float64bits(mean))*10) / 10
+		// mean = ParseFloat(nil)
+		v.Mean = mean
 		stations[k] = v
 
 	}

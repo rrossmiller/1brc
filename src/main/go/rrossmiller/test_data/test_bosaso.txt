@@ -1,0 +1,4 @@
+Bosaso;5.0
+Bosaso;20.0
+Bosaso;-5.0
+Bosaso;-15.0
